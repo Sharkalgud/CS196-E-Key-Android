@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 3;
     private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
+    ConnectedThread connectedThread;
     Button button;
     Button button2;
     BluetoothAdapter bluetoothAdapter;
@@ -62,11 +64,11 @@ public class MainActivity extends AppCompatActivity {
                 if (lock) {
                     button.setText("Lock door");
                     lock = false;
-                    sendMessage("open");
+                    connectedThread.write("unlock".getBytes());
                 } else {
                     button.setText("Unlock door");
                     lock = true;
-                    sendMessage("close");
+                    connectedThread.write("close".getBytes());
                 }
             }
         });
@@ -77,7 +79,16 @@ public class MainActivity extends AppCompatActivity {
                     Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
                 }
-                findPi();
+                //findPi();
+                Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+                for(BluetoothDevice b : pairedDevices){
+                    Log.d("Mainactivity", b.getName() + " " + b.getAddress());
+                    try {
+                        bluetoothSocket = b.createInsecureRfcommSocketToServiceRecord(UUID.fromString("dad8bf14-b6c3-45fa-b9a7-94c1fde2e7c6"));
+                    }catch(IOException e){}
+                }
+                if(bluetoothSocket != null)
+                    connectedThread = new ConnectedThread(bluetoothSocket);
                 //connectDevice(new Intent(), true);
             }
         });
@@ -113,6 +124,14 @@ public class MainActivity extends AppCompatActivity {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     Log.d("MainActivity", device.getName() + "\n" + device.getAddress());
                     foundDevices.add(device);
+                    Log.d("MainActivity", "" + device.ACTION_UUID);
+                    if(device.ACTION_UUID.equals( "dad8bf14-b6c3-45fa-b9a7-94c1fde2e7c6" )) {
+                        Log.d("MainActivity", "we in");
+                        try {
+                            device.createInsecureRfcommSocketToServiceRecord(UUID.fromString(device.ACTION_UUID));
+                        }catch(IOException e){}
+                        bluetoothAdapter.cancelDiscovery();
+                    }
                 }
             }
         };
@@ -120,17 +139,18 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(broadcastReceiver, filter);
         textView.setText("Looking For Pi");
         bluetoothAdapter.startDiscovery();
-        big: for( BluetoothDevice btd : foundDevices) {
+        /*big: for( BluetoothDevice btd : foundDevices) {
             if (btd.ACTION_UUID == "dad8bf14-b6c3-45fa-b9a7-94c1fde2e7c6") {
                 textView.setText("Connecting to Pi....");
                 try {
-                    bluetoothSocket = btd.createRfcommSocketToServiceRecord(UUID.fromString(btd.ACTION_UUID))
+                    bluetoothSocket = btd.createRfcommSocketToServiceRecord(UUID.fromString(btd.ACTION_UUID));
                 } catch (IOException e) {
                 }
                 textView.setText("Connected with Pi");
                 break big;
             }
-        }
+        }*/
+
     }
     private class ConnectedThread extends Thread{
         private final BluetoothSocket bluetoothSocket;
@@ -146,6 +166,18 @@ public class MainActivity extends AppCompatActivity {
             }catch(IOException e){}
             inputStream = tmpIn;
             outputStream = tmpOut;
+        }
+        public void write(byte[] bytes){
+            try {
+                outputStream.write(bytes);
+            }catch(IOException e){
+            }
+        }
+        public void cancel(){
+            try{
+                bluetoothSocket.close();
+            }catch(IOException e){
+            }
         }
     }
 }
