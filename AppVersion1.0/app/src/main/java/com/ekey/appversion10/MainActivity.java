@@ -85,10 +85,19 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("Mainactivity", b.getName() + " " + b.getAddress());
                     try {
                         bluetoothSocket = b.createInsecureRfcommSocketToServiceRecord(UUID.fromString("dad8bf14-b6c3-45fa-b9a7-94c1fde2e7c6"));
-                    }catch(IOException e){}
+                        bluetoothSocket.connect();
+                    }catch(IOException e){
+                        Log.d("MainActivity", "it failed goddammnnn");
+                    }
                 }
-                if(bluetoothSocket != null)
+                if(bluetoothSocket != null) {
+                    try {
+                        OutputStream outputStream = bluetoothSocket.getOutputStream();
+                        outputStream.write("Hello World".getBytes());
+                    }catch (IOException e){}
+                    Log.d("MainActivity","ITSS ALIVEEEEEEE");
                     connectedThread = new ConnectedThread(bluetoothSocket);
+                }
                 //connectDevice(new Intent(), true);
             }
         });
