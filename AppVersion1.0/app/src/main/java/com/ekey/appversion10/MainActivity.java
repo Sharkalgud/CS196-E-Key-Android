@@ -74,15 +74,24 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothChatService mChatService = null;
     Button unlock;
     Button connect;
+    Button turnon;
     Boolean doorState = false; //starts locked
-    Intent serverIntent = new Intent(this, DeviceListActivity.class);
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         unlock = (Button) findViewById(R.id.button);
         connect = (Button) findViewById(R.id.button2);
+        turnon = (Button) findViewById(R.id.button3);
+        //Intent serverIntent = new Intent(this, DeviceListActivity.class);
         connect.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                Intent intent = new Intent(MainActivity.this, DeviceListActivity.class);
+                startActivityForResult(intent, REQUEST_CONNECT_DEVICE_INSECURE);
+                //connectDevice(serverIntent, false);
+            }
+        });
+        turnon.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -98,8 +107,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 setupChat();
                 ensureDiscoverable();
-                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_INSECURE);
-                connectDevice(serverIntent, false);
             }
         });
     }
@@ -182,12 +189,46 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private void connectDevice(Intent data, boolean secure) {
+        Log.d(TAG, "AYYYY in connected DEVICE");
         // Get the device MAC address
         String address = data.getExtras()
                 .getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+        Log.d(TAG, "Go remote device now onto btooth connect");
         // Attempt to connect to the device
         mChatService.connect(device, secure);
+        mChatService.start();
+    }
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d(TAG, "connectDevice called");
+        connectDevice(data, false);
+        /*switch (requestCode) {
+            case REQUEST_CONNECT_DEVICE_SECURE:
+                // When DeviceListActivity returns with a device to connect
+                if (resultCode == Activity.RESULT_OK) {
+                    connectDevice(data, true);
+                }
+                break;
+            case REQUEST_CONNECT_DEVICE_INSECURE:
+                // When DeviceListActivity returns with a device to connect
+                if (resultCode == Activity.RESULT_OK) {
+                    Log.d(TAG, "connectDevice called");
+                    connectDevice(data, false);
+                }
+                break;
+            case REQUEST_ENABLE_BT:*/
+                /*// When the request to enable Bluetooth returns
+                if (resultCode == Activity.RESULT_OK) {
+                    // Bluetooth is now enabled, so set up a chat session
+                    setupChat();
+                } else {
+                    // User did not enable Bluetooth or an error occurred
+                    Log.d(TAG, "BT not enabled");
+                    Toast.makeText(this, "BT is not enabled by",
+                            Toast.LENGTH_SHORT).show();
+                    this.finish();
+                }*/
     }
 }
+

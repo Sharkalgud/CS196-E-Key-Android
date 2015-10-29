@@ -28,9 +28,9 @@ public class BluetoothChatService {
 
     // Unique UUID for this application
     private static final UUID MY_UUID_SECURE =
-            UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
+            UUID.fromString("dad8bf14-b6c3-45fa-b9a7-94c1fde2e7c6");
     private static final UUID MY_UUID_INSECURE =
-            UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
+            UUID.fromString("dad8bf14-b6c3-45fa-b9a7-94c1fde2e7c6");
 
     // Member fields
     private final BluetoothAdapter mAdapter;
@@ -135,10 +135,12 @@ public class BluetoothChatService {
             mConnectedThread.cancel();
             mConnectedThread = null;
         }
-
+        Log.d(TAG, "Moving on to Connected Thread");
         // Start the thread to connect with the given device
         mConnectThread = new ConnectThread(device, secure);
+        Log.d(TAG, "STARTINGGGGGGGGGGGG");
         mConnectThread.start();
+        Log.d(TAG, "it has started");
         setState(STATE_CONNECTING);
     }
 
