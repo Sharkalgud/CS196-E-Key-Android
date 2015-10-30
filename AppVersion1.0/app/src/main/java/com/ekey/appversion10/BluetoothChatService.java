@@ -140,7 +140,6 @@ public class BluetoothChatService {
         mConnectThread = new ConnectThread(device, secure);
         Log.e(TAG, "STARTINGGGGGGGGGGGG");
         mConnectThread.start();
-        Log.d(TAG, "it has started");
         setState(STATE_CONNECTING);
     }
 
@@ -363,6 +362,7 @@ public class BluetoothChatService {
 
         public ConnectThread(BluetoothDevice device, boolean secure) {
             mmDevice = device;
+            secure = true;
             BluetoothSocket tmp = null;
             mSocketType = secure ? "Secure" : "Insecure";
 
@@ -380,6 +380,7 @@ public class BluetoothChatService {
                 Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
             }
             mmSocket = tmp;
+            Log.e(TAG, "socket is " + mmSocket.toString());
         }
 
         public void run() {
@@ -393,9 +394,12 @@ public class BluetoothChatService {
             try {
                 // This is a blocking call and will only return on a
                 // successful connection or an exception
+                Log.e(TAG, "attempting to connect mmSocket");
                 mmSocket.connect();
             } catch (IOException e) {
                 // Close the socket
+                Log.e(TAG, "connection failed");
+                Log.e(TAG, e.toString());
                 try {
                     mmSocket.close();
                 } catch (IOException e2) {
@@ -406,13 +410,13 @@ public class BluetoothChatService {
                 return;
             }
 
-            // Reset the ConnectThread because we're done
-            synchronized (BluetoothChatService.this) {
-                mConnectThread = null;
-            }
+//            // Reset the ConnectThread because we're done
+//            synchronized (BluetoothChatService.this) {
+//                mConnectThread = null;
+//            }
 
             // Start the connected thread
-            connected(mmSocket, mmDevice, mSocketType);
+            //connected(mmSocket, mmDevice, mSocketType);
         }
 
         public void cancel() {

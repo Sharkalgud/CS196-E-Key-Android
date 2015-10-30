@@ -4,15 +4,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.nfc.Tag;
-import android.os.Handler;
-import android.os.Message;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,25 +15,25 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
-import com.ekey.appversion10.DeviceListActivity;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.Security;
-import java.util.ArrayList;
-import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
+
+    // Unique UUID for this application
+    private static final UUID MY_UUID_SECURE =
+            UUID.fromString("dad8bf14-b6c3-45fa-b9a7-94c1fde2e7c6");
+    private static final UUID MY_UUID_INSECURE =
+            UUID.fromString("dad8bf14-b6c3-45fa-b9a7-94c1fde2e7c6");
     private static final String TAG = "BluetoothChatFragment";
 
     // Intent request codes
     private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
     private static final int REQUEST_ENABLE_BT = 3;
+
 
     // Layout Views
     private ListView mConversationView;
@@ -109,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
                 ensureDiscoverable();
             }
         });
+
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
     @Override
@@ -196,10 +190,108 @@ public class MainActivity extends AppCompatActivity {
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         Log.e(TAG, "Go remote device now onto btooth connect");
+        connect(device, secure);
         // Attempt to connect to the device
-        mChatService.connect(device, secure);
-        mChatService.start();
+        //mChatService.connect(device, secure);
+        //mChatService.start();
     }
+
+    public synchronized void connect(BluetoothDevice device, boolean secure) {
+        Log.e(TAG, "connect to: " + device);
+
+        // Cancel any thread attempting to make a connection
+        /*if (mState == STATE_CONNECTING) {
+            if (mConnectThread != null) {
+                mConnectThread.cancel();
+                mConnectThread = null;
+            }
+        }
+
+        // Cancel any thread currently running a connection
+        if (mConnectedThread != null) {
+            mConnectedThread.cancel();
+            mConnectedThread = null;
+        }*/
+        Log.e(TAG, "Moving on to Connected Threaddddddddsadfjds;lfkjdsaf;lsadkfjdsa " + device);
+        // Start the thread to connect with the given device
+        ConnectThread mConnectThread = new ConnectThread(device, secure);
+        Log.e(TAG, "STARTINGGGGGGGGGGGG");
+        mConnectThread.start();
+    }
+
+    private class ConnectThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final BluetoothDevice mmDevice;
+        private String mSocketType;
+
+        public ConnectThread(BluetoothDevice device, boolean secure) {
+            mmDevice = device;
+            secure = true;
+            BluetoothSocket tmp = null;
+            mSocketType = secure ? "Secure" : "Insecure";
+
+            // Get a BluetoothSocket for a connection with the
+            // given BluetoothDevice
+            try {
+                if (secure) {
+                    tmp = device.createRfcommSocketToServiceRecord(
+                            MY_UUID_SECURE);
+                } else {
+                    tmp = device.createInsecureRfcommSocketToServiceRecord(
+                            MY_UUID_INSECURE);
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
+            }
+            mmSocket = tmp;
+            Log.e(TAG, "socket is " + mmSocket.toString());
+        }
+
+        public void run() {
+            Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
+            setName("ConnectThread" + mSocketType);
+
+            // Always cancel discovery because it will slow down a connection
+            mBluetoothAdapter.cancelDiscovery();
+
+            // Make a connection to the BluetoothSocket
+            try {
+                // This is a blocking call and will only return on a
+                // successful connection or an exception
+                Log.e(TAG, "attempting to connect mmSocket");
+                mmSocket.connect();
+            } catch (IOException e) {
+                // Close the socket
+                Log.e(TAG, "connection failed");
+                Log.e(TAG, e.toString());
+                try {
+                    mmSocket.close();
+                } catch (IOException e2) {
+                    Log.e(TAG, "unable to close() " + mSocketType +
+                            " socket during connection failure", e2);
+                }
+                //connectionFailed();
+                return;
+            }
+
+//            // Reset the ConnectThread because we're done
+//            synchronized (BluetoothChatService.this) {
+//                mConnectThread = null;
+//            }
+
+            // Start the connected thread
+            //connected(mmSocket, mmDevice, mSocketType);
+        }
+
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);
+            }
+        }
+    }
+
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         switch (requestCode) {
