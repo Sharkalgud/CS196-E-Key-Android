@@ -120,10 +120,10 @@ public class BluetoothChatService {
      * @param secure Socket Security type - Secure (true) , Insecure (false)
      */
     public synchronized void connect(BluetoothDevice device, boolean secure) {
-        Log.d(TAG, "connect to: " + device);
+        Log.e(TAG, "connect to: " + device);
 
         // Cancel any thread attempting to make a connection
-        if (mState == STATE_CONNECTING) {
+        /*if (mState == STATE_CONNECTING) {
             if (mConnectThread != null) {
                 mConnectThread.cancel();
                 mConnectThread = null;
@@ -134,11 +134,11 @@ public class BluetoothChatService {
         if (mConnectedThread != null) {
             mConnectedThread.cancel();
             mConnectedThread = null;
-        }
-        Log.d(TAG, "Moving on to Connected Thread");
+        }*/
+        Log.e(TAG, "Moving on to Connected Threaddddddddsadfjds;lfkjdsaf;lsadkfjdsa " + device);
         // Start the thread to connect with the given device
         mConnectThread = new ConnectThread(device, secure);
-        Log.d(TAG, "STARTINGGGGGGGGGGGG");
+        Log.e(TAG, "STARTINGGGGGGGGGGGG");
         mConnectThread.start();
         Log.d(TAG, "it has started");
         setState(STATE_CONNECTING);

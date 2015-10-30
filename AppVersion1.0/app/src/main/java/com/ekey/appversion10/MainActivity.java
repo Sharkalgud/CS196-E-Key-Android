@@ -189,22 +189,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private void connectDevice(Intent data, boolean secure) {
-        Log.d(TAG, "AYYYY in connected DEVICE");
+        Log.e(TAG, "AYYYY in connected DEVICE");
         // Get the device MAC address
         String address = data.getExtras()
                 .getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-        Log.d(TAG, "Go remote device now onto btooth connect");
+        Log.e(TAG, "Go remote device now onto btooth connect");
         // Attempt to connect to the device
         mChatService.connect(device, secure);
         mChatService.start();
     }
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.d(TAG, "connectDevice called");
-        connectDevice(data, false);
-        /*switch (requestCode) {
+
+        switch (requestCode) {
             case REQUEST_CONNECT_DEVICE_SECURE:
+                Log.e(TAG, "hola im in secure");
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
                     connectDevice(data, true);
@@ -213,11 +213,12 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_CONNECT_DEVICE_INSECURE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    Log.d(TAG, "connectDevice called");
+                    Log.e(TAG, "connectDevice called");
                     connectDevice(data, false);
                 }
                 break;
-            case REQUEST_ENABLE_BT:*/
+            case REQUEST_ENABLE_BT:
+                Log.e(TAG, "hola im in enable bt");
                 /*// When the request to enable Bluetooth returns
                 if (resultCode == Activity.RESULT_OK) {
                     // Bluetooth is now enabled, so set up a chat session
@@ -229,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT).show();
                     this.finish();
                 }*/
+                break;
+        }
     }
 }
-
