@@ -18,6 +18,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
      * Member object for the chat services
      */
     private BluetoothChatService mChatService = null;
+    private ConnectedThread mConnectedThread = null;
     Button unlock;
     Button connect;
     Button turnon;
@@ -76,6 +79,20 @@ public class MainActivity extends AppCompatActivity {
         connect = (Button) findViewById(R.id.button2);
         turnon = (Button) findViewById(R.id.button3);
         //Intent serverIntent = new Intent(this, DeviceListActivity.class);
+        unlock.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Send a message using content of the edit text widget
+                if(!doorState){
+                    Log.e(TAG, "Unlocking");
+                    doorState = true;
+                    sendMessage("unlock");}
+                else{
+                    Log.e(TAG, "Locking");
+                    doorState = false;
+                    sendMessage("lock");
+                }
+            }
+        });
         connect.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 Intent intent = new Intent(MainActivity.this, DeviceListActivity.class);
@@ -101,7 +118,6 @@ public class MainActivity extends AppCompatActivity {
                 ensureDiscoverable();
             }
         });
-
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
@@ -138,17 +154,6 @@ public class MainActivity extends AppCompatActivity {
        // mOutEditText.setOnEditorActionListener(mWriteListener);
 
         // Initialize the send button with a listener that for click events
-        unlock.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                // Send a message using content of the edit text widget
-                if(!doorState)
-                    sendMessage("unlock");
-                else{
-                    doorState = true;
-                    sendMessage("lock");
-                }
-            }
-        });
 
         // Initialize the BluetoothChatService to perform bluetooth connections
         mChatService = new BluetoothChatService();
@@ -158,16 +163,16 @@ public class MainActivity extends AppCompatActivity {
     }
     private void sendMessage(String message) {
         // Check that we're actually connected before trying anything
-        if (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
-            Toast.makeText(new MainActivity(), "your not connected", Toast.LENGTH_SHORT).show();
+        /*if (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
+            Toast.makeText(this , "your not connected", Toast.LENGTH_SHORT).show();
             return;
-        }
+        }*/
 
         // Check that there's actually something to send
         if (message.length() > 0) {
             // Get the message bytes and tell the BluetoothChatService to write
             byte[] send = message.getBytes();
-            mChatService.write(send);
+            mConnectedThread.write(send);
 
             // Reset out string buffer to zero and clear the edit text field
             //mOutStringBuffer.setLength(0);
@@ -281,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
 
             // Start the connected thread
             //connected(mmSocket, mmDevice, mSocketType);
+            mConnectedThread = new ConnectedThread(mmSocket, mSocketType);
         }
 
         public void cancel() {
@@ -323,6 +329,73 @@ public class MainActivity extends AppCompatActivity {
                     this.finish();
                 }*/
                 break;
+        }
+    }
+    class ConnectedThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
+
+        public ConnectedThread(BluetoothSocket socket, String socketType) {
+            Log.d(TAG, "create ConnectedThread: " + socketType);
+            mmSocket = socket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+
+            // Get the BluetoothSocket input and output streams
+            try {
+                tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } catch (IOException e) {
+                Log.e(TAG, "temp sockets not created", e);
+            }
+
+            mmInStream = tmpIn;
+            mmOutStream = tmpOut;
+        }
+
+        public void run() {
+            Log.i(TAG, "BEGIN mConnectedThread");
+            byte[] buffer = new byte[1024];
+            int bytes;
+
+            // Keep listening to the InputStream while connected
+            while (true) {
+                try {
+                    // Read from the InputStream
+                    bytes = mmInStream.read(buffer);
+
+                    // Send the obtained bytes to the UI Activity
+                } catch (IOException e) {
+                    Log.e(TAG, "disconnected", e);
+                    // Start the service over to restart listening mode
+                    //BluetoothChatService.this.start();
+                    break;
+                }
+            }
+        }
+
+        /**
+         * Write to the connected OutStream.
+         *
+         * @param buffer The bytes to write
+         */
+        public void write(byte[] buffer) {
+            try {
+                mmOutStream.write(buffer);
+
+                // Share the sent message back to the UI Activity
+            } catch (IOException e) {
+                Log.e(TAG, "Exception during write", e);
+            }
+        }
+
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "close() of connect socket failed", e);
+            }
         }
     }
 }
