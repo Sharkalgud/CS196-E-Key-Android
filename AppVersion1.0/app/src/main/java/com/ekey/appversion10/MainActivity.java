@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
     private ConnectedThread mConnectedThread = null;
     Button unlock;
     Button connect;
-    Button turnon;
+    //Button turnon;
     Boolean doorState = false; //starts locked
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         unlock = (Button) findViewById(R.id.button);
         connect = (Button) findViewById(R.id.button2);
-        turnon = (Button) findViewById(R.id.button3);
+        //turnon = (Button) findViewById(R.id.button3);
         //Intent serverIntent = new Intent(this, DeviceListActivity.class);
         unlock.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -100,24 +100,20 @@ public class MainActivity extends AppCompatActivity {
                 //connectDevice(serverIntent, false);
             }
         });
-        turnon.setOnClickListener(new View.OnClickListener(){
-            public void onClick(View v){
-                mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-                // If the adapter is null, then Bluetooth is not supported
-                if (mBluetoothAdapter == null) {
-                    MainActivity activity = new MainActivity();
-                    Toast.makeText(activity, "Bluetooth is not available", Toast.LENGTH_LONG).show();
-                    activity.finish();
-                }
-                if (!mBluetoothAdapter.isEnabled()) {
-                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-                }
-                setupChat();
-                ensureDiscoverable();
-            }
-        });
+        // If the adapter is null, then Bluetooth is not supported
+        if (mBluetoothAdapter == null) {
+            MainActivity activity = new MainActivity();
+            Toast.makeText(activity, "Bluetooth is not available", Toast.LENGTH_LONG).show();
+            activity.finish();
+        }
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        }
+        setupChat();
+        ensureDiscoverable();
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
