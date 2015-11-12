@@ -190,7 +190,7 @@ public class MainActivity extends Activity {
         {
             for(BluetoothDevice device : pairedDevices)
             {
-                if(device.getName().equals("raspberrypi-0")) //Note, you will need to change this to match the name of your device
+                if(device.getName().equals("jordi-mint-0")) //Note, you will need to change this to match the name of your device
                 {
                     Log.e("Aquarium",device.getName());
                     mmDevice = device;
