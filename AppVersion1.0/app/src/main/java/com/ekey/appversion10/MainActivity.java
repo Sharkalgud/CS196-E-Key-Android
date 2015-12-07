@@ -20,6 +20,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -427,17 +428,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     public PublicKey get()throws Exception{
-            File f = new File("pkey.pem");
+            //File f = new File("");
             //FileInputStream fis = new FileInputStream(f);
-            InputStream is = r.getAssets().open("pkey.pem");
+            InputStream is = r.openRawResource(R.raw.pkey);
             Log.e(TAG, "Inputted Stream");
             DataInputStream dis = new DataInputStream(is);
-            byte[] keyBytes = new byte[(int)f.length()];
-            dis.readFully(keyBytes);
+            Log.e(TAG, "EEEEEEEEEEEEE");
+            byte[] keyBytes = new byte[2000];
+            try{
+                dis.readFully(keyBytes);
+            }catch(EOFException e){
+                Log.e(TAG, "caught not thrown");
+            }
             dis.close();
+            Log.e(TAG, "FFFFFFFFFFFFF");
             String temp = new String(keyBytes);
-            temp.replace("-----BEGIN PUBLIC KEY-----\n", "");
-            temp.replace("-----END PUBLIC KEY-----", "");
+            temp = temp.replace("-----BEGIN PUBLIC KEY-----", "");
+            temp = temp.replace("-----END PUBLIC KEY-----", "");
+            temp = temp.trim();
             Log.e(TAG,temp);
             //X509EncodedKeySpec spec = new X509EncodedKeySpec(temp.getBytes());
             byte[] encoded = Base64.decode(temp, Base64.DEFAULT);
