@@ -5,8 +5,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
+import android.content.res.Resources;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,10 +19,19 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.UUID;
+import javax.crypto.Cipher;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -71,12 +82,24 @@ public class MainActivity extends AppCompatActivity {
     Button connect;
     //Button turnon;
     Boolean doorState = false; //starts locked
+    private PublicKey p = null;
+    Resources r;
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         unlock = (Button) findViewById(R.id.button);
         connect = (Button) findViewById(R.id.button2);
+        MainActivity a = new MainActivity();
+        r = getResources();
+        try {
+            p = get();
+        } catch (Exception e) {
+            //Toast.makeText(a, "aww shucks", Toast.LENGTH_SHORT);
+            Log.e(TAG, "FAILURE");
+            e.printStackTrace();
+        }
+        //Toast.makeText(a,p.getAlgorithm(),Toast.LENGTH_LONG );
         //turnon = (Button) findViewById(R.id.button3);
         //Intent serverIntent = new Intent(this, DeviceListActivity.class);
         unlock.setOnClickListener(new View.OnClickListener() {
@@ -85,11 +108,20 @@ public class MainActivity extends AppCompatActivity {
                 if(!doorState){
                     Log.e(TAG, "Unlocking");
                     doorState = true;
-                    sendMessage("unlock");}
+                    try {
+                        sendMessage("unlock");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
                 else{
                     Log.e(TAG, "Locking");
                     doorState = false;
-                    sendMessage("lock");
+                    try {
+                        sendMessage("lock");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         });
@@ -157,17 +189,18 @@ public class MainActivity extends AppCompatActivity {
         // Initialize the buffer for outgoing messages
         //mOutStringBuffer = new StringBuffer("");
     }
-    private void sendMessage(String message) {
+    private void sendMessage(String message) throws Exception {
         // Check that we're actually connected before trying anything
         /*if (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
             Toast.makeText(this , "your not connected", Toast.LENGTH_SHORT).show();
             return;
         }*/
-
+        Cipher c = Cipher.getInstance("RSA");
+        c.init(Cipher.ENCRYPT_MODE, p);
         // Check that there's actually something to send
         if (message.length() > 0) {
             // Get the message bytes and tell the BluetoothChatService to write
-            byte[] send = message.getBytes();
+            byte[] send = c.doFinal(message.getBytes());
             mConnectedThread.write(send);
 
             // Reset out string buffer to zero and clear the edit text field
@@ -394,4 +427,34 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+    public PublicKey get()throws Exception{
+            //File f = new File("");
+            //FileInputStream fis = new FileInputStream(f);
+            InputStream is = r.openRawResource(R.raw.pkey);
+            Log.e(TAG, "Inputted Stream");
+            DataInputStream dis = new DataInputStream(is);
+            Log.e(TAG, "EEEEEEEEEEEEE");
+            byte[] keyBytes = new byte[2000];
+            try{
+                dis.readFully(keyBytes);
+            }catch(EOFException e){
+                Log.e(TAG, "caught not thrown");
+            }
+            dis.close();
+            Log.e(TAG, "FFFFFFFFFFFFF");
+            String temp = new String(keyBytes);
+            temp = temp.replace("-----BEGIN PUBLIC KEY-----", "");
+            temp = temp.replace("-----END PUBLIC KEY-----", "");
+            temp = temp.trim();
+            Log.e(TAG,temp);
+            //X509EncodedKeySpec spec = new X509EncodedKeySpec(temp.getBytes());
+            byte[] encoded = Base64.decode(temp, Base64.DEFAULT);
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(encoded);
+            Log.e(TAG, "ITSALLIVEEEE");
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            Log.e(TAG, "Here be the problem");
+            PublicKey p = kf.generatePublic(spec);
+            Log.e(TAG, "NO HERE BE THE PROBLEM");
+            return p;
+        }
 }
